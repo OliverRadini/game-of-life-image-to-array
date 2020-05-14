@@ -1,0 +1,41 @@
+{
+  "name": "typescript-node-starter",
+  "version": "1.0.0",
+  "description": "typescript nodejs starter",
+  "author": "Tristan Teufel",
+  "homepage": "https://teufel-it.de",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/firsttris/typescript-node-starter.git"
+  },
+  "main": "dist/index",
+  "devDependencies": {
+    "@types/node": "^9.4.5",
+    "@types/pngjs": "^3.4.2",
+    "clean-webpack-plugin": "^0.1.18",
+    "ts-loader": "^3.5.0",
+    "ts-node": "^4.1.0",
+    "typescript": "^2.7.1",
+    "webpack": "^3.11.0"
+  },
+  "scripts": {
+    "dev": "ts-node-dev --inspect --no-notify -r ./register-ts-config-path.ts ./src/index.ts",
+    "nodemon": "nodemon",
+    "tslint:fix": "tslint --fix -c tslint.json \"*.{ts,tsx}\"",
+    "test": "jest --coverage",
+    "build": "node ./node_modules/.bin/webpack"
+  },
+  "keywords": [
+    "microserver",
+    "nodejs",
+    "typescript",
+    "jest",
+    "webpack",
+    "prettier"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "pngjs": "^5.0.0",
+    "request": "^2.88.2"
+  }
+}
