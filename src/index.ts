@@ -69,20 +69,67 @@ const determineGridSize = (pixelData: IPixelData[][]) => {
         .map(matchesGridLinePixel)
         .map((matches, i) => [matches, i])
         .filter(x => x[0])
-        .map(x => x[1]);
+        .map(x => x[1]) as number[];
 
     const indicesForHorizontalLines = pixelData
         .map(x => x[0])
         .map(matchesGridLinePixel)
         .map((matches, i) => [matches, i])
         .filter(x => x[0])
-        .map(x => x[1]);
+        .map(x => x[1]) as number[];
         
-
     return {
-        indicesForVerticalLines,
-        indicesForHorizontalLines,
+        indicesForVerticalLines: removeSimilarConsecutiveNumbers(indicesForVerticalLines),
+        indicesForHorizontalLines: removeSimilarConsecutiveNumbers(indicesForHorizontalLines),
     };
+};
+
+const removeSimilarConsecutiveNumbers = (items: number[]) =>
+    items.filter((x, i) => {
+        const previousItem = items[i - 1];
+
+        if (previousItem === undefined) {
+            return true;
+        }
+
+        return Math.abs(x - previousItem) <= 1;
+    });
+
+const toAllConsecutivePairs = <T>(x: T[]) => x
+    .map((y, i) => x[i+1] !== undefined ? [y, x[i+1]] : null)
+    .filter(x => x !== null);
+
+interface ISquare {
+    x1: number;
+    x2: number;
+    y1: number;
+    y2: number;
+}
+
+const lineDataToSquare = (lineData: { horizontalPair: [number, number], verticalPair: [number, number] }): ISquare => ({
+    x1: lineData.horizontalPair[0],
+    x2: lineData.horizontalPair[1],
+    y1: lineData.verticalPair[0],
+    y2: lineData.verticalPair[1],
+});
+
+const gridLinesToPixelCoordinateSquares = (gridLines: ReturnType<typeof determineGridSize>): ISquare[][] => {
+    const horizontalGridLinePairs = toAllConsecutivePairs(gridLines.indicesForHorizontalLines);
+    const vertialGridLinePairs = toAllConsecutivePairs(gridLines.indicesForVerticalLines);
+
+    const returnData = vertialGridLinePairs 
+        .map(
+            verticalPair => horizontalGridLinePairs 
+                .map(
+                    horizontalPair => ({
+                        horizontalPair,
+                        verticalPair,
+                    })
+                )
+        )
+        .map(x => x.map(lineDataToSquare));
+
+    return returnData;
 };
 
 const parseImageAtLocation = async (fileLocation: string) => {
@@ -92,7 +139,11 @@ const parseImageAtLocation = async (fileLocation: string) => {
         return failure;
     }
 
-    console.log(determineGridSize(pngData));
+    const gridLines = determineGridSize(pngData);
+    const pixelSquares = gridLinesToPixelCoordinateSquares(gridLines);
+
+    console.dir(pixelSquares);
+
     return pngData;
 };
 
