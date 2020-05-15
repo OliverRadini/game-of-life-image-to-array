@@ -65,13 +65,13 @@ const determineGridSize = (pixelData: IPixelData[][]) => {
     const gridLinePixel: IPixelData = { red: 235, green: 235, blue: 235 };
     const matchesGridLinePixel = pixelsMatch(gridLinePixel);
 
-    const indicesForVerticalLines = pixelData[0]
+    const indicesForHorizontalLines = pixelData[0]
         .map(matchesGridLinePixel)
         .map((matches, i) => [matches, i])
         .filter(x => x[0])
         .map(x => x[1]) as number[];
 
-    const indicesForHorizontalLines = pixelData
+    const indicesForVerticalLines = pixelData
         .map(x => x[0])
         .map(matchesGridLinePixel)
         .map((matches, i) => [matches, i])
@@ -132,6 +132,30 @@ const gridLinesToPixelCoordinateSquares = (gridLines: ReturnType<typeof determin
     return returnData;
 };
 
+const flattenOnce = <T>(x: T[][]) => x.reduce((p, c) => [...p, ...c], [])
+
+const pixelSumReducer = (p: IPixelData, c: IPixelData): IPixelData => ({
+    red: p.red + c.red,
+    green: p.green + c.green,
+    blue: p.blue + c.blue,
+});
+
+const getAverageColourForPixelSquare = (pixelData: IPixelData[][]) => (square: ISquare) => {
+    const allPixelsInSquare = flattenOnce(
+        pixelData.slice(square.y1, square.y2)
+            .map(pixelRow => pixelRow.slice(square.x1, square.x2))
+    )   
+
+    const summedPixelValues = allPixelsInSquare
+        .reduce(pixelSumReducer, { red: 0, green: 0, blue: 0});
+
+    return {
+        red: summedPixelValues.red / allPixelsInSquare.length,
+        green: summedPixelValues.green / allPixelsInSquare.length,
+        blue: summedPixelValues.blue / allPixelsInSquare.length,
+    };
+};
+
 const parseImageAtLocation = async (fileLocation: string) => {
     const pngData = await loadPngFromFileLocation(fileLocation);
 
@@ -142,10 +166,30 @@ const parseImageAtLocation = async (fileLocation: string) => {
     const gridLines = determineGridSize(pngData);
     const pixelSquares = gridLinesToPixelCoordinateSquares(gridLines);
 
-    console.dir(pixelSquares);
+    const pixelIsDark = (pixel: IPixelData) => pixel.red < 30
+        && pixel.green < 30
+        && pixel.blue < 30;
 
-    return pngData;
+
+    const pixelGrid = pixelSquares
+        .map(
+            pixelSquareRow => pixelSquareRow.map(
+                square => ({
+                    ...square,
+                    isDark: pixelIsDark(getAverageColourForPixelSquare(pngData)(square)),
+                }),
+            )
+        )
+        .map(
+            pixelData => pixelData.map(x => x.isDark ? '1' : '.').join(''),
+        )
+
+    console.log(pixelGrid);
+
+    return pixelGrid;
 };
+
+
 
 parseImageAtLocation('./images/image1.png').then(() => console.log('done'));
 
